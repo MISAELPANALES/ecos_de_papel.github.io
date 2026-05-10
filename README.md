@@ -1,1 +1,639 @@
-# ecos_de_papel.github.io
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>notas al margen — sala de lectura</title>
+    <style>
+        :root {
+            --fondo: #faf7f2;
+            --papel: #fefdfb;
+            --texto: #3d3226;
+            --texto-claro: #6b5e4f;
+            --acento: #8b5e3c;
+            --acento-hover: #a0724a;
+            --borde: #d4c5b2;
+            --borde-claro: #e8ddd0;
+            --discord: #5865F2;
+            --discord-hover: #4752c4;
+            --sombra: 0 2px 16px rgba(60, 30, 10, 0.08);
+            --sombra-hover: 0 4px 24px rgba(60, 30, 10, 0.14);
+            --rojo: #c0392b;
+            --verde: #6b8e5a;
+            --transicion: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background-color: var(--fondo);
+            background-image:
+                radial-gradient(ellipse at 20% 20%, rgba(180, 150, 120, 0.06) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 70%, rgba(160, 130, 100, 0.05) 0%, transparent 60%);
+            color: var(--texto);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1.65;
+        }
+        .pantalla-acceso { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; width: 100%; padding: 2rem; }
+        .pantalla-acceso.oculta { display: none; }
+        .tarjeta-acceso {
+            background: var(--papel); border: 1px solid var(--borde); border-radius: 8px;
+            padding: 3rem 2.5rem; max-width: 460px; width: 100%; box-shadow: var(--sombra); text-align: center;
+        }
+        .tarjeta-acceso .icono-libro { font-size: 3.5rem; margin-bottom: 0.8rem; opacity: 0.85; }
+        .tarjeta-acceso .nombre-app { font-family: 'Georgia', serif; font-size: 1.8rem; font-style: italic; color: var(--acento); letter-spacing: 0.02em; margin-bottom: 0.3rem; }
+        .tarjeta-acceso .subtitulo { font-size: 0.9rem; color: var(--texto-claro); margin-bottom: 2rem; letter-spacing: 0.03em; }
+        .tarjeta-acceso .separador { width: 40px; height: 2px; background: var(--borde); margin: 0 auto 1.8rem; border-radius: 1px; }
+        .tarjeta-acceso label { display: block; text-align: left; font-size: 0.85rem; color: var(--texto-claro); margin-bottom: 0.4rem; }
+        .tarjeta-acceso input[type="email"] {
+            width: 100%; padding: 0.85rem 1rem; border: 1.5px solid var(--borde-claro); border-radius: 6px;
+            font-size: 1rem; font-family: 'Georgia', serif; background: var(--fondo); color: var(--texto);
+            transition: var(--transicion); outline: none;
+        }
+        .tarjeta-acceso input[type="email"]:focus { border-color: var(--acento); box-shadow: 0 0 0 3px rgba(139, 94, 60, 0.08); background: #fff; }
+        .tarjeta-acceso .btn-ingresar {
+            width: 100%; margin-top: 1.4rem; padding: 0.85rem; background: var(--acento); color: #fff;
+            border: none; border-radius: 6px; font-size: 1rem; font-family: 'Georgia', serif;
+            cursor: pointer; letter-spacing: 0.03em; transition: var(--transicion);
+        }
+        .tarjeta-acceso .btn-ingresar:hover { background: var(--acento-hover); box-shadow: var(--sombra-hover); }
+        .tarjeta-acceso .btn-ingresar:active { transform: scale(0.98); }
+        .tarjeta-acceso .error-msg { color: var(--rojo); font-size: 0.85rem; margin-top: 0.6rem; display: none; }
+        .sala-lectura { display: none; width: 100%; max-width: 1300px; padding: 1.5rem; flex: 1; }
+        .sala-lectura.visible { display: flex; flex-direction: column; }
+        .header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; padding-bottom: 1.2rem; border-bottom: 1.5px solid var(--borde-claro); margin-bottom: 1.5rem; }
+        .header .logo { font-family: 'Georgia', serif; font-size: 1.5rem; font-style: italic; color: var(--acento); letter-spacing: 0.02em; display: flex; align-items: center; gap: 0.5rem; }
+        .header .logo .icono { font-size: 1.8rem; }
+        .header .info-usuario { display: flex; align-items: center; gap: 1rem; font-size: 0.85rem; color: var(--texto-claro); }
+        .header .email-badge { background: var(--papel); border: 1px solid var(--borde-claro); padding: 0.4rem 1rem; border-radius: 20px; font-style: italic; font-size: 0.85rem; }
+        .header .btn-salir { background: none; border: 1px solid var(--borde); color: var(--texto-claro); padding: 0.4rem 1rem; border-radius: 20px; cursor: pointer; font-family: 'Georgia', serif; font-size: 0.82rem; transition: var(--transicion); }
+        .header .btn-salir:hover { background: #f5e6d8; border-color: var(--acento); color: var(--acento); }
+        .contenido-principal { display: flex; gap: 2rem; flex: 1; min-height: 0; }
+        .panel-archivos { width: 340px; min-width: 280px; background: var(--papel); border: 1px solid var(--borde-claro); border-radius: 8px; box-shadow: var(--sombra); display: flex; flex-direction: column; max-height: calc(100vh - 160px); }
+        .panel-archivos .panel-header { padding: 1.2rem 1.3rem; border-bottom: 1px solid var(--borde-claro); display: flex; justify-content: space-between; align-items: center; }
+        .panel-archivos .panel-header h2 { font-size: 1rem; font-weight: normal; letter-spacing: 0.03em; color: var(--texto); }
+        .panel-archivos .btn-subir { background: var(--acento); color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; font-family: 'Georgia', serif; font-size: 0.82rem; transition: var(--transicion); white-space: nowrap; }
+        .panel-archivos .btn-subir:hover { background: var(--acento-hover); box-shadow: var(--sombra-hover); }
+        .lista-archivos { list-style: none; overflow-y: auto; flex: 1; padding: 0.5rem 0; }
+        .lista-archivos li { padding: 0.9rem 1.3rem; cursor: pointer; border-bottom: 1px solid rgba(0,0,0,0.03); transition: var(--transicion); display: flex; align-items: center; gap: 0.7rem; }
+        .lista-archivos li:hover { background: #fdf5ec; }
+        .lista-archivos li.activo { background: #fdf0e0; border-left: 3px solid var(--acento); }
+        .lista-archivos li .tipo-icono { font-size: 1.4rem; flex-shrink: 0; }
+        .lista-archivos li .info-archivo { flex: 1; min-width: 0; }
+        .lista-archivos li .nombre-archivo { font-size: 0.9rem; color: var(--texto); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .lista-archivos li .meta-archivo { font-size: 0.72rem; color: var(--texto-claro); }
+        .lista-archivos .vacia { text-align: center; padding: 2.5rem 1.5rem; color: var(--texto-claro); font-style: italic; font-size: 0.9rem; }
+        .area-lectura { flex: 1; background: var(--papel); border: 1px solid var(--borde-claro); border-radius: 8px; box-shadow: var(--sombra); display: flex; flex-direction: column; min-height: 500px; max-height: calc(100vh - 160px); }
+        .area-lectura .placeholder-lectura { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--texto-claro); font-style: italic; gap: 0.8rem; }
+        .area-lectura .placeholder-lectura .icono-grande { font-size: 4rem; opacity: 0.4; }
+        .area-lectura iframe { flex: 1; border: none; border-radius: 0 0 8px 8px; width: 100%; }
+        .area-lectura .visor-docx { flex: 1; overflow-y: auto; padding: 2rem 2.5rem; border-radius: 0 0 8px 8px; }
+        .area-lectura .cabecera-lectura { padding: 0.9rem 1.5rem; border-bottom: 1px solid var(--borde-claro); font-size: 0.9rem; color: var(--texto); display: flex; align-items: center; gap: 0.6rem; background: #fefdfb; border-radius: 8px 8px 0 0; }
+
+        /* Botón flotante de Discord */
+        .btn-discord {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            background: var(--discord);
+            color: #fff;
+            border: none;
+            padding: 0.85rem 1.5rem;
+            border-radius: 50px;
+            font-family: 'Georgia', serif;
+            font-size: 0.95rem;
+            cursor: pointer;
+            z-index: 150;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            box-shadow: 0 4px 20px rgba(88, 101, 242, 0.4);
+            transition: var(--transicion);
+            text-decoration: none;
+            animation: pulse-discord 2s infinite;
+        }
+        .btn-discord:hover {
+            background: var(--discord-hover);
+            box-shadow: 0 6px 28px rgba(88, 101, 242, 0.55);
+            transform: translateY(-2px);
+            animation: none;
+        }
+        .btn-discord .discord-icon {
+            font-size: 1.4rem;
+        }
+        .btn-discord .discord-text {
+            letter-spacing: 0.03em;
+        }
+        @keyframes pulse-discord {
+            0%, 100% { box-shadow: 0 4px 20px rgba(88, 101, 242, 0.4); }
+            50% { box-shadow: 0 4px 32px rgba(88, 101, 242, 0.65); }
+        }
+
+        /* Modal */
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(30,15,5,0.5); z-index: 100; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.2s ease; }
+        .overlay.oculta { display: none; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .modal { background: var(--papel); border-radius: 10px; padding: 2.2rem; max-width: 480px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.25); animation: slideUp 0.25s ease; }
+        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal h3 { font-family: 'Georgia', serif; font-weight: normal; color: var(--acento); margin-bottom: 0.4rem; font-size: 1.2rem; font-style: italic; }
+        .modal p { font-size: 0.85rem; color: var(--texto-claro); margin-bottom: 1.4rem; }
+        .modal .zona-drop { border: 2px dashed var(--borde); border-radius: 8px; padding: 2.5rem 1.5rem; text-align: center; cursor: pointer; transition: var(--transicion); margin-bottom: 1.2rem; background: var(--fondo); }
+        .modal .zona-drop:hover, .modal .zona-drop.arrastrando { border-color: var(--acento); background: #fdf5ec; }
+        .modal .zona-drop .icono-upload { font-size: 2.5rem; opacity: 0.6; }
+        .modal .archivo-seleccionado { background: #f0f8eb; border: 1px solid #c5d9b5; border-radius: 6px; padding: 0.7rem 1rem; font-size: 0.85rem; color: var(--verde); display: none; margin-bottom: 1rem; word-break: break-all; }
+        .modal .archivo-seleccionado.visible { display: block; }
+        .modal .btn-subir-archivo { width: 100%; padding: 0.8rem; background: var(--acento); color: #fff; border: none; border-radius: 6px; font-size: 0.95rem; cursor: pointer; font-family: 'Georgia', serif; transition: var(--transicion); }
+        .modal .btn-subir-archivo:hover { background: var(--acento-hover); }
+        .modal .btn-subir-archivo:disabled { opacity: 0.5; cursor: not-allowed; }
+        .modal .btn-cerrar-modal { background: none; border: 1px solid var(--borde); color: var(--texto-claro); padding: 0.55rem 1.2rem; border-radius: 6px; cursor: pointer; font-family: 'Georgia', serif; font-size: 0.85rem; margin-top: 0.8rem; transition: var(--transicion); }
+        .modal .btn-cerrar-modal:hover { background: #f5e6d8; }
+        .modal .modal-footer { display: flex; gap: 0.6rem; justify-content: flex-end; }
+        .modal .error-subida { color: var(--rojo); font-size: 0.82rem; margin-top: 0.5rem; display: none; }
+        .toast { position: fixed; bottom: 2rem; right: 2rem; background: #3d3226; color: #fff; padding: 0.9rem 1.5rem; border-radius: 8px; font-family: 'Georgia', serif; font-size: 0.9rem; z-index: 200; opacity: 0; transform: translateY(20px); transition: all 0.3s ease; pointer-events: none; box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+        .toast.visible { opacity: 1; transform: translateY(0); }
+        .toast.exito { background: #4a6b3a; }
+        .toast.error { background: #8b2e2e; }
+        @media (max-width: 768px) {
+            .contenido-principal { flex-direction: column; gap: 1rem; }
+            .panel-archivos { width: 100%; min-width: auto; max-height: 300px; }
+            .area-lectura { max-height: 50vh; min-height: 350px; }
+            .tarjeta-acceso { padding: 2rem 1.5rem; }
+            .tarjeta-acceso .nombre-app { font-size: 1.5rem; }
+            .header { gap: 0.6rem; }
+            .header .logo { font-size: 1.2rem; }
+            .btn-discord { bottom: 1rem; left: 1rem; padding: 0.7rem 1.2rem; font-size: 0.85rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Pantalla de Acceso -->
+    <div class="pantalla-acceso" id="pantallaAcceso">
+        <div class="tarjeta-acceso">
+            <div class="icono-libro">📖</div>
+            <div class="nombre-app">notas al margen</div>
+            <div class="subtitulo">sala de lectura colaborativa</div>
+            <div class="separador"></div>
+            <label for="emailInput">Ingresa tu correo electrónico para entrar</label>
+            <input type="email" id="emailInput" placeholder="tu@correo.com" autocomplete="email">
+            <button class="btn-ingresar" id="btnIngresar">Entrar a la sala</button>
+            <p class="error-msg" id="errorAcceso">Por favor, ingresa un correo electrónico válido.</p>
+        </div>
+    </div>
+
+    <!-- Sala de Lectura -->
+    <div class="sala-lectura" id="salaLectura">
+        <div class="header">
+            <div class="logo"><span class="icono">📖</span> notas al margen</div>
+            <div class="info-usuario">
+                <span class="email-badge" id="emailBadge"></span>
+                <button class="btn-salir" id="btnSalir">Salir</button>
+            </div>
+        </div>
+        <div class="contenido-principal">
+            <div class="panel-archivos">
+                <div class="panel-header">
+                    <h2>📚 Textos compartidos</h2>
+                    <button class="btn-subir" id="btnAbrirModal">+ Subir texto</button>
+                </div>
+                <ul class="lista-archivos" id="listaArchivos">
+                    <li class="vacia">Cargando textos...</li>
+                </ul>
+            </div>
+            <div class="area-lectura" id="areaLectura">
+                <div class="placeholder-lectura" id="placeholderLectura">
+                    <span class="icono-grande">📄</span>
+                    <p>Selecciona un texto de la lista para leerlo aquí</p>
+                    <p style="font-size:0.8rem;">Formatos compatibles: PDF, Word (.docx, .doc)</p>
+                </div>
+                <div class="cabecera-lectura" id="cabeceraLectura" style="display:none;">
+                    <span id="iconoTipoLectura"></span>
+                    <span id="nombreArchivoLectura"></span>
+                </div>
+                <iframe id="visorPDF" style="display:none;" title="Visor PDF"></iframe>
+                <div class="visor-docx" id="visorDocx" style="display:none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botón flotante de Discord -->
+    <a href="https://discord.gg/TU-ENLACE-DE-INVITACION" target="_blank" class="btn-discord" id="btnDiscord">
+        <span class="discord-icon">💬</span>
+        <span class="discord-text">Leer juntos en Discord</span>
+    </a>
+
+    <!-- Modal subir archivo -->
+    <div class="overlay oculta" id="overlayModal">
+        <div class="modal">
+            <h3>📤 Subir un nuevo texto</h3>
+            <p>Comparte un archivo PDF o Word con la sala de lectura.</p>
+            <div class="zona-drop" id="zonaDrop">
+                <div class="icono-upload">📁</div>
+                <p>Arrastra tu archivo aquí o haz clic para seleccionarlo</p>
+                <div class="formatos">PDF, DOC, DOCX — Máx. 50 MB</div>
+            </div>
+            <input type="file" id="inputArchivo" accept=".pdf,.doc,.docx" style="display:none;">
+            <div class="archivo-seleccionado" id="archivoSeleccionado"></div>
+            <button class="btn-subir-archivo" id="btnSubirArchivo" disabled>Subir a la sala</button>
+            <p class="error-subida" id="errorSubida"></p>
+            <div class="modal-footer">
+                <button class="btn-cerrar-modal" id="btnCerrarModal">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script type="module">
+        import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+        
+        // ⚠️ CAMBIA ESTOS VALORES POR LOS DE TU PROYECTO EN SUPABASE
+        const SUPABASE_URL = 'https://aisqxnygwetrejovxjwx.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_Cmzn0-5M30vDUrczkDtpEQ_2e_I61zh';
+        
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // ⚠️ CAMBIA ESTO POR TU ENLACE DE INVITACIÓN DE DISCORD
+        const DISCORD_INVITE_URL = 'https://discord.gg/26FqMMakb';
+        document.getElementById('btnDiscord').href = DISCORD_INVITE_URL;
+
+        // Elementos DOM
+        const pantallaAcceso = document.getElementById('pantallaAcceso');
+        const emailInput = document.getElementById('emailInput');
+        const btnIngresar = document.getElementById('btnIngresar');
+        const errorAcceso = document.getElementById('errorAcceso');
+        const salaLectura = document.getElementById('salaLectura');
+        const emailBadge = document.getElementById('emailBadge');
+        const btnSalir = document.getElementById('btnSalir');
+        const listaArchivos = document.getElementById('listaArchivos');
+        const placeholderLectura = document.getElementById('placeholderLectura');
+        const cabeceraLectura = document.getElementById('cabeceraLectura');
+        const visorPDF = document.getElementById('visorPDF');
+        const visorDocx = document.getElementById('visorDocx');
+        const iconoTipoLectura = document.getElementById('iconoTipoLectura');
+        const nombreArchivoLectura = document.getElementById('nombreArchivoLectura');
+        const overlayModal = document.getElementById('overlayModal');
+        const zonaDrop = document.getElementById('zonaDrop');
+        const inputArchivo = document.getElementById('inputArchivo');
+        const archivoSeleccionado = document.getElementById('archivoSeleccionado');
+        const btnSubirArchivo = document.getElementById('btnSubirArchivo');
+        const btnCerrarModal = document.getElementById('btnCerrarModal');
+        const errorSubida = document.getElementById('errorSubida');
+        const btnAbrirModal = document.getElementById('btnAbrirModal');
+        const toast = document.getElementById('toast');
+
+        let emailUsuario = null;
+        let archivoParaSubir = null;
+        let archivoActualLectura = null;
+        let urlFirmadaActual = null;
+
+        // Toast
+        let toastTimer;
+        function mostrarToast(mensaje, tipo = '') {
+            clearTimeout(toastTimer);
+            toast.textContent = mensaje;
+            toast.className = 'toast ' + tipo + ' visible';
+            toastTimer = setTimeout(() => toast.classList.remove('visible'), 3000);
+        }
+
+        // Helpers
+        function obtenerIcono(tipo) {
+            switch (tipo) {
+                case '.pdf': return '📕';
+                case '.docx': return '📘';
+                case '.doc': return '📙';
+                default: return '📄';
+            }
+        }
+        function formatearTamaño(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1048576).toFixed(1) + ' MB';
+        }
+        function escapeHtml(texto) {
+            const div = document.createElement('div');
+            div.textContent = texto;
+            return div.innerHTML;
+        }
+
+        // ========== URL FIRMADA (PROTECCIÓN REAL) ==========
+        async function obtenerUrlFirmada(storagePath) {
+            const { data, error } = await supabase.rpc('get_signed_url', {
+                bucket_name: 'documentos',
+                file_path: storagePath
+            });
+            
+            if (error) {
+                console.error('Error al obtener URL firmada:', error);
+                return null;
+            }
+            return data;
+        }
+
+        // ========== REGISTRAR ACCIÓN ==========
+        async function registrarAccion(accion, archivo = null) {
+            if (!emailUsuario) return;
+            await supabase.from('registros').insert({
+                email: emailUsuario,
+                accion: accion,
+                archivo: archivo,
+                fecha: new Date().toISOString()
+            });
+        }
+
+        // ========== PANTALLA DE ACCESO ==========
+        btnIngresar.addEventListener('click', async () => {
+            const email = emailInput.value.trim();
+            if (!email || !email.includes('@') || email.length < 5) {
+                errorAcceso.style.display = 'block';
+                return;
+            }
+            errorAcceso.style.display = 'none';
+            btnIngresar.disabled = true;
+            btnIngresar.textContent = 'Entrando...';
+
+            emailUsuario = email;
+            sessionStorage.setItem('notasAlMargen_email', email);
+            await registrarAccion('acceso');
+            abrirSala();
+            btnIngresar.disabled = false;
+            btnIngresar.textContent = 'Entrar a la sala';
+        });
+
+        emailInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') btnIngresar.click();
+        });
+
+        // ========== SALA ==========
+        function abrirSala() {
+            pantallaAcceso.classList.add('oculta');
+            salaLectura.classList.add('visible');
+            emailBadge.textContent = emailUsuario;
+            cargarArchivos();
+        }
+
+        function cerrarSala() {
+            emailUsuario = null;
+            sessionStorage.removeItem('notasAlMargen_email');
+            pantallaAcceso.classList.remove('oculta');
+            salaLectura.classList.remove('visible');
+            emailInput.value = '';
+            visorPDF.style.display = 'none';
+            visorPDF.src = '';
+            visorDocx.style.display = 'none';
+            visorDocx.innerHTML = '';
+            cabeceraLectura.style.display = 'none';
+            placeholderLectura.style.display = 'flex';
+            archivoActualLectura = null;
+            urlFirmadaActual = null;
+        }
+
+        btnSalir.addEventListener('click', cerrarSala);
+
+        // Recuperar sesión
+        const emailGuardado = sessionStorage.getItem('notasAlMargen_email');
+        if (emailGuardado) {
+            emailUsuario = emailGuardado;
+            abrirSala();
+        }
+
+        // ========== CARGAR ARCHIVOS ==========
+        async function cargarArchivos() {
+            listaArchivos.innerHTML = '<li class="vacia">Cargando textos...</li>';
+            const { data, error } = await supabase
+                .from('archivos')
+                .select('*')
+                .order('fecha_subida', { ascending: false });
+
+            if (error) {
+                console.error(error);
+                listaArchivos.innerHTML = '<li class="vacia">Error al cargar los textos.</li>';
+                return;
+            }
+            renderizarLista(data);
+        }
+
+        function renderizarLista(archivos) {
+            if (archivos.length === 0) {
+                listaArchivos.innerHTML = '<li class="vacia">Aún no hay textos compartidos.<br>Sé el primero en subir uno ✨</li>';
+                return;
+            }
+            listaArchivos.innerHTML = '';
+            archivos.forEach(archivo => {
+                const li = document.createElement('li');
+                const tipoIcono = obtenerIcono(archivo.tipo);
+                const fecha = new Date(archivo.fecha_subida).toLocaleDateString('es-ES', {
+                    day: '2-digit', month: 'short', year: 'numeric'
+                });
+                const tamaño = formatearTamaño(archivo.tamaño);
+                li.innerHTML = `
+                    <span class="tipo-icono">${tipoIcono}</span>
+                    <div class="info-archivo">
+                        <div class="nombre-archivo" title="${escapeHtml(archivo.nombre)}">${escapeHtml(archivo.nombre)}</div>
+                        <div class="meta-archivo">${fecha} · ${tamaño}</div>
+                    </div>
+                `;
+                li.addEventListener('click', () => abrirArchivo(archivo, li));
+                if (archivoActualLectura && archivoActualLectura.id === archivo.id) {
+                    li.classList.add('activo');
+                }
+                listaArchivos.appendChild(li);
+            });
+        }
+
+        // ========== ABRIR ARCHIVO CON URL FIRMADA ==========
+        async function abrirArchivo(archivo, liElement) {
+            document.querySelectorAll('.lista-archivos li').forEach(el => el.classList.remove('activo'));
+            if (liElement) liElement.classList.add('activo');
+
+            archivoActualLectura = archivo;
+            placeholderLectura.style.display = 'none';
+            visorPDF.style.display = 'none';
+            visorPDF.src = '';
+            visorDocx.style.display = 'none';
+            visorDocx.innerHTML = '';
+
+            // Obtener URL firmada (expira en 1 hora)
+            mostrarToast('🔒 Cargando documento...', '');
+            const urlFirmada = await obtenerUrlFirmada(archivo.storage_path);
+            
+            if (!urlFirmada) {
+                mostrarToast('Error al cargar el documento protegido', 'error');
+                placeholderLectura.style.display = 'flex';
+                return;
+            }
+
+            urlFirmadaActual = urlFirmada;
+            nombreArchivoLectura.textContent = archivo.nombre;
+            iconoTipoLectura.textContent = obtenerIcono(archivo.tipo);
+            cabeceraLectura.style.display = 'flex';
+
+            await registrarAccion('lectura', archivo.nombre);
+
+            if (archivo.tipo === '.pdf') {
+                visorPDF.src = urlFirmada;
+                visorPDF.style.display = 'block';
+            } else if (archivo.tipo === '.docx') {
+                visorDocx.style.display = 'block';
+                visorDocx.innerHTML = '<p style="color:#6b5e4f;font-style:italic;">Cargando documento...</p>';
+                try {
+                    const resp = await fetch(urlFirmada);
+                    const arrayBuffer = await resp.arrayBuffer();
+                    const result = await mammoth.convertToHtml({ arrayBuffer });
+                    visorDocx.innerHTML = result.value;
+                } catch (err) {
+                    visorDocx.innerHTML = '<p style="color:#c0392b;">Error al cargar el documento. Intenta de nuevo más tarde.</p>';
+                }
+            } else {
+                // .doc antiguo
+                visorDocx.style.display = 'block';
+                visorDocx.innerHTML = `
+                    <div style="text-align:center;padding:3rem;">
+                        <p style="font-size:2rem;">📙</p>
+                        <p>Los archivos <strong>.doc</strong> antiguos no pueden previsualizarse aquí.</p>
+                        <p>Este formato no es compatible con la lectura en línea.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // ========== RENOVAR URL CADA 50 MINUTOS ==========
+        setInterval(async () => {
+            if (archivoActualLectura && visorPDF.style.display === 'block') {
+                const nuevaUrl = await obtenerUrlFirmada(archivoActualLectura.storage_path);
+                if (nuevaUrl) {
+                    urlFirmadaActual = nuevaUrl;
+                    visorPDF.src = nuevaUrl;
+                }
+            }
+        }, 50 * 60 * 1000); // 50 minutos
+
+        // ========== SUBIR ARCHIVO ==========
+        async function subirArchivo() {
+            if (!archivoParaSubir || !emailUsuario) return;
+            btnSubirArchivo.disabled = true;
+            btnSubirArchivo.textContent = 'Subiendo...';
+            errorSubida.style.display = 'none';
+
+            const ext = '.' + archivoParaSubir.name.split('.').pop().toLowerCase();
+            const timestamp = Date.now();
+            const storagePath = `${timestamp}-${archivoParaSubir.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('documentos')
+                .upload(storagePath, archivoParaSubir, { upsert: false });
+
+            if (uploadError) {
+                mostrarErrorSubida(uploadError.message);
+                btnSubirArchivo.disabled = false;
+                btnSubirArchivo.textContent = 'Subir a la sala';
+                return;
+            }
+
+            const { error: dbError } = await supabase.from('archivos').insert({
+                nombre: archivoParaSubir.name,
+                tipo: ext,
+                tamaño: archivoParaSubir.size,
+                storage_path: storagePath,
+                subido_por: emailUsuario,
+                fecha_subida: new Date().toISOString()
+            });
+
+            if (dbError) {
+                mostrarErrorSubida('Error al guardar los datos del archivo.');
+                btnSubirArchivo.disabled = false;
+                btnSubirArchivo.textContent = 'Subir a la sala';
+                return;
+            }
+
+            await registrarAccion('subida', archivoParaSubir.name);
+            mostrarToast('✅ Texto subido correctamente', 'exito');
+            overlayModal.classList.add('oculta');
+            resetearModal();
+            cargarArchivos();
+            btnSubirArchivo.disabled = false;
+            btnSubirArchivo.textContent = 'Subir a la sala';
+        }
+
+        function resetearModal() {
+            archivoParaSubir = null;
+            inputArchivo.value = '';
+            archivoSeleccionado.classList.remove('visible');
+            archivoSeleccionado.textContent = '';
+            btnSubirArchivo.disabled = true;
+            errorSubida.style.display = 'none';
+        }
+
+        function mostrarErrorSubida(msg) {
+            errorSubida.textContent = msg;
+            errorSubida.style.display = 'block';
+            archivoParaSubir = null;
+            archivoSeleccionado.classList.remove('visible');
+            btnSubirArchivo.disabled = true;
+        }
+
+        // Eventos del modal
+        btnAbrirModal.addEventListener('click', () => overlayModal.classList.remove('oculta'));
+        btnCerrarModal.addEventListener('click', () => { overlayModal.classList.add('oculta'); resetearModal(); });
+        overlayModal.addEventListener('click', (e) => { if (e.target === overlayModal) { overlayModal.classList.add('oculta'); resetearModal(); } });
+        zonaDrop.addEventListener('click', () => inputArchivo.click());
+        zonaDrop.addEventListener('dragover', (e) => { e.preventDefault(); zonaDrop.classList.add('arrastrando'); });
+        zonaDrop.addEventListener('dragleave', () => zonaDrop.classList.remove('arrastrando'));
+        zonaDrop.addEventListener('drop', (e) => {
+            e.preventDefault();
+            zonaDrop.classList.remove('arrastrando');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) procesarArchivo(files[0]);
+        });
+        inputArchivo.addEventListener('change', () => { if (inputArchivo.files.length > 0) procesarArchivo(inputArchivo.files[0]); });
+
+        function procesarArchivo(file) {
+            const tiposPermitidos = ['.pdf', '.doc', '.docx'];
+            const ext = '.' + file.name.split('.').pop().toLowerCase();
+            if (!tiposPermitidos.includes(ext)) {
+                mostrarErrorSubida('Formato no permitido. Usa PDF, DOC o DOCX.');
+                return;
+            }
+            if (file.size > 50 * 1024 * 1024) {
+                mostrarErrorSubida('El archivo supera los 50 MB.');
+                return;
+            }
+            archivoParaSubir = file;
+            archivoSeleccionado.textContent = `📎 ${file.name} (${formatearTamaño(file.size)})`;
+            archivoSeleccionado.classList.add('visible');
+            btnSubirArchivo.disabled = false;
+        }
+
+        btnSubirArchivo.addEventListener('click', subirArchivo);
+
+        // Tecla ESC para cerrar modal
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !overlayModal.classList.contains('oculta')) {
+                overlayModal.classList.add('oculta');
+                resetearModal();
+            }
+        });
+
+        // Bloquear clic derecho en el visor
+        document.addEventListener('contextmenu', (e) => {
+            if (e.target.closest('#visorPDF') || e.target.closest('#visorDocx')) {
+                e.preventDefault();
+            }
+        });
+
+        // Actualizar lista periódicamente
+        setInterval(() => {
+            if (emailUsuario) cargarArchivos();
+        }, 30000);
+
+        console.log('📖 "notas al margen" — sala de lectura colaborativa');
+        console.log('💬 Unirse al canal de Discord:', DISCORD_INVITE_URL);
+    </script>
+
+    <!-- Dependencia para leer DOCX -->
+    <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+</body>
+</html>
