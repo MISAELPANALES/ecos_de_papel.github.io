@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>notas al margen — sala de lectura</title>
-    <!-- ============ ESTILOS (los mismos de tu original) ============ -->
     <style>
         :root {
             --fondo: #faf7f2;
@@ -15,6 +14,8 @@
             --acento-hover: #a0724a;
             --borde: #d4c5b2;
             --borde-claro: #e8ddd0;
+            --discord: #5865F2;
+            --discord-hover: #4752c4;
             --sombra: 0 2px 16px rgba(60, 30, 10, 0.08);
             --sombra-hover: 0 4px 24px rgba(60, 30, 10, 0.14);
             --rojo: #c0392b;
@@ -90,8 +91,47 @@
         .area-lectura iframe { flex: 1; border: none; border-radius: 0 0 8px 8px; width: 100%; }
         .area-lectura .visor-docx { flex: 1; overflow-y: auto; padding: 2rem 2.5rem; border-radius: 0 0 8px 8px; }
         .area-lectura .cabecera-lectura { padding: 0.9rem 1.5rem; border-bottom: 1px solid var(--borde-claro); font-size: 0.9rem; color: var(--texto); display: flex; align-items: center; gap: 0.6rem; background: #fefdfb; border-radius: 8px 8px 0 0; }
-        .area-lectura .cabecera-lectura .btn-descargar { margin-left: auto; background: none; border: 1px solid var(--borde); color: var(--acento); padding: 0.35rem 0.9rem; border-radius: 16px; cursor: pointer; font-family: 'Georgia', serif; font-size: 0.8rem; text-decoration: none; transition: var(--transicion); }
-        .area-lectura .cabecera-lectura .btn-descargar:hover { background: #fdf5ec; }
+
+        /* Botón flotante de Discord */
+        .btn-discord {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            background: var(--discord);
+            color: #fff;
+            border: none;
+            padding: 0.85rem 1.5rem;
+            border-radius: 50px;
+            font-family: 'Georgia', serif;
+            font-size: 0.95rem;
+            cursor: pointer;
+            z-index: 150;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            box-shadow: 0 4px 20px rgba(88, 101, 242, 0.4);
+            transition: var(--transicion);
+            text-decoration: none;
+            animation: pulse-discord 2s infinite;
+        }
+        .btn-discord:hover {
+            background: var(--discord-hover);
+            box-shadow: 0 6px 28px rgba(88, 101, 242, 0.55);
+            transform: translateY(-2px);
+            animation: none;
+        }
+        .btn-discord .discord-icon {
+            font-size: 1.4rem;
+        }
+        .btn-discord .discord-text {
+            letter-spacing: 0.03em;
+        }
+        @keyframes pulse-discord {
+            0%, 100% { box-shadow: 0 4px 20px rgba(88, 101, 242, 0.4); }
+            50% { box-shadow: 0 4px 32px rgba(88, 101, 242, 0.65); }
+        }
+
+        /* Modal */
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(30,15,5,0.5); z-index: 100; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.2s ease; }
         .overlay.oculta { display: none; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -123,12 +163,13 @@
             .tarjeta-acceso .nombre-app { font-size: 1.5rem; }
             .header { gap: 0.6rem; }
             .header .logo { font-size: 1.2rem; }
+            .btn-discord { bottom: 1rem; left: 1rem; padding: 0.7rem 1.2rem; font-size: 0.85rem; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Pantalla de Acceso [sin cambios] -->
+    <!-- Pantalla de Acceso -->
     <div class="pantalla-acceso" id="pantallaAcceso">
         <div class="tarjeta-acceso">
             <div class="icono-libro">📖</div>
@@ -142,7 +183,7 @@
         </div>
     </div>
 
-    <!-- Sala de Lectura [casi igual, solo cambian los ID para el visor] -->
+    <!-- Sala de Lectura -->
     <div class="sala-lectura" id="salaLectura">
         <div class="header">
             <div class="logo"><span class="icono">📖</span> notas al margen</div>
@@ -170,7 +211,6 @@
                 <div class="cabecera-lectura" id="cabeceraLectura" style="display:none;">
                     <span id="iconoTipoLectura"></span>
                     <span id="nombreArchivoLectura"></span>
-                    <a class="btn-descargar" id="btnDescargar" href="#" target="_blank">⬇ Descargar</a>
                 </div>
                 <iframe id="visorPDF" style="display:none;" title="Visor PDF"></iframe>
                 <div class="visor-docx" id="visorDocx" style="display:none;"></div>
@@ -178,7 +218,13 @@
         </div>
     </div>
 
-    <!-- Modal subir archivo [sin cambios] -->
+    <!-- Botón flotante de Discord -->
+    <a href="https://discord.gg/TU-ENLACE-DE-INVITACION" target="_blank" class="btn-discord" id="btnDiscord">
+        <span class="discord-icon">💬</span>
+        <span class="discord-text">Leer juntos en Discord</span>
+    </a>
+
+    <!-- Modal subir archivo -->
     <div class="overlay oculta" id="overlayModal">
         <div class="modal">
             <h3>📤 Subir un nuevo texto</h3>
@@ -201,15 +247,20 @@
     <!-- Toast -->
     <div class="toast" id="toast"></div>
 
-    <!-- ============ LÓGICA CON SUPABASE ============ -->
     <script type="module">
-        // 1. Inicializar Supabase
         import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-        const SUPABASE_URL = 'https://aisqxnygwetrejovxjwx.supabase.co';          // ⚠️ PON TU URL
-        const SUPABASE_ANON_KEY = 'sb_publishable_Cmzn0-5M30vDUrczkDtpEQ_2e_I61zh'; // ⚠️ PON TU ANON KEY
+        
+        // ⚠️ CAMBIA ESTOS VALORES POR LOS DE TU PROYECTO EN SUPABASE
+        const SUPABASE_URL = 'https://aisqxnygwetrejovxjwx.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpc3F4bnlnd2V0cmVqb3Z4and4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1MTQwNjIsImV4cCI6MjA5MzA5MDA2Mn0.H4DItdzGFCJ613-6la3rZNga2OxpRPtlYm9Ib4a9YvQ';
+        
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Elementos DOM (igual que tu código original)
+        // ⚠️ CAMBIA ESTO POR TU ENLACE DE INVITACIÓN DE DISCORD
+        const DISCORD_INVITE_URL = 'https://discord.gg/26FqMMakb';
+        document.getElementById('btnDiscord').href = DISCORD_INVITE_URL;
+
+        // Elementos DOM
         const pantallaAcceso = document.getElementById('pantallaAcceso');
         const emailInput = document.getElementById('emailInput');
         const btnIngresar = document.getElementById('btnIngresar');
@@ -218,12 +269,10 @@
         const emailBadge = document.getElementById('emailBadge');
         const btnSalir = document.getElementById('btnSalir');
         const listaArchivos = document.getElementById('listaArchivos');
-        const areaLectura = document.getElementById('areaLectura');
         const placeholderLectura = document.getElementById('placeholderLectura');
         const cabeceraLectura = document.getElementById('cabeceraLectura');
         const visorPDF = document.getElementById('visorPDF');
         const visorDocx = document.getElementById('visorDocx');
-        const btnDescargar = document.getElementById('btnDescargar');
         const iconoTipoLectura = document.getElementById('iconoTipoLectura');
         const nombreArchivoLectura = document.getElementById('nombreArchivoLectura');
         const overlayModal = document.getElementById('overlayModal');
@@ -239,8 +288,9 @@
         let emailUsuario = null;
         let archivoParaSubir = null;
         let archivoActualLectura = null;
+        let urlFirmadaActual = null;
 
-        // Toast helper
+        // Toast
         let toastTimer;
         function mostrarToast(mensaje, tipo = '') {
             clearTimeout(toastTimer);
@@ -249,7 +299,7 @@
             toastTimer = setTimeout(() => toast.classList.remove('visible'), 3000);
         }
 
-        // Funciones auxiliares
+        // Helpers
         function obtenerIcono(tipo) {
             switch (tipo) {
                 case '.pdf': return '📕';
@@ -269,7 +319,21 @@
             return div.innerHTML;
         }
 
-        // ============ REGISTRAR ACCESO EN SUPABASE ============
+        // ========== URL FIRMADA (PROTECCIÓN REAL) ==========
+        async function obtenerUrlFirmada(storagePath) {
+            const { data, error } = await supabase.rpc('get_signed_url', {
+                bucket_name: 'documentos',
+                file_path: storagePath
+            });
+            
+            if (error) {
+                console.error('Error al obtener URL firmada:', error);
+                return null;
+            }
+            return data;
+        }
+
+        // ========== REGISTRAR ACCIÓN ==========
         async function registrarAccion(accion, archivo = null) {
             if (!emailUsuario) return;
             await supabase.from('registros').insert({
@@ -280,7 +344,7 @@
             });
         }
 
-        // ============ PANTALLA DE ACCESO ============
+        // ========== PANTALLA DE ACCESO ==========
         btnIngresar.addEventListener('click', async () => {
             const email = emailInput.value.trim();
             if (!email || !email.includes('@') || email.length < 5) {
@@ -303,7 +367,7 @@
             if (e.key === 'Enter') btnIngresar.click();
         });
 
-        // ============ SALA ============
+        // ========== SALA ==========
         function abrirSala() {
             pantallaAcceso.classList.add('oculta');
             salaLectura.classList.add('visible');
@@ -324,18 +388,19 @@
             cabeceraLectura.style.display = 'none';
             placeholderLectura.style.display = 'flex';
             archivoActualLectura = null;
+            urlFirmadaActual = null;
         }
 
         btnSalir.addEventListener('click', cerrarSala);
 
-        // Recuperar sesión guardada
+        // Recuperar sesión
         const emailGuardado = sessionStorage.getItem('notasAlMargen_email');
         if (emailGuardado) {
             emailUsuario = emailGuardado;
             abrirSala();
         }
 
-        // ============ CARGAR LISTA DE ARCHIVOS DESDE SUPABASE ============
+        // ========== CARGAR ARCHIVOS ==========
         async function cargarArchivos() {
             listaArchivos.innerHTML = '<li class="vacia">Cargando textos...</li>';
             const { data, error } = await supabase
@@ -379,7 +444,7 @@
             });
         }
 
-        // ============ ABRIR ARCHIVO PARA LECTURA ============
+        // ========== ABRIR ARCHIVO CON URL FIRMADA ==========
         async function abrirArchivo(archivo, liElement) {
             document.querySelectorAll('.lista-archivos li').forEach(el => el.classList.remove('activo'));
             if (liElement) liElement.classList.add('activo');
@@ -391,11 +456,17 @@
             visorDocx.style.display = 'none';
             visorDocx.innerHTML = '';
 
-            // Obtener URL pública del archivo
-            const { data } = supabase.storage.from('documentos').getPublicUrl(archivo.storage_path);
-            const urlArchivo = data.publicUrl;
+            // Obtener URL firmada (expira en 1 hora)
+            mostrarToast('🔒 Cargando documento...', '');
+            const urlFirmada = await obtenerUrlFirmada(archivo.storage_path);
+            
+            if (!urlFirmada) {
+                mostrarToast('Error al cargar el documento protegido', 'error');
+                placeholderLectura.style.display = 'flex';
+                return;
+            }
 
-            btnDescargar.href = urlArchivo;
+            urlFirmadaActual = urlFirmada;
             nombreArchivoLectura.textContent = archivo.nombre;
             iconoTipoLectura.textContent = obtenerIcono(archivo.tipo);
             cabeceraLectura.style.display = 'flex';
@@ -403,33 +474,44 @@
             await registrarAccion('lectura', archivo.nombre);
 
             if (archivo.tipo === '.pdf') {
-                visorPDF.src = urlArchivo;
+                visorPDF.src = urlFirmada;
                 visorPDF.style.display = 'block';
             } else if (archivo.tipo === '.docx') {
                 visorDocx.style.display = 'block';
                 visorDocx.innerHTML = '<p style="color:#6b5e4f;font-style:italic;">Cargando documento...</p>';
                 try {
-                    const resp = await fetch(urlArchivo);
+                    const resp = await fetch(urlFirmada);
                     const arrayBuffer = await resp.arrayBuffer();
                     const result = await mammoth.convertToHtml({ arrayBuffer });
                     visorDocx.innerHTML = result.value;
                 } catch (err) {
-                    visorDocx.innerHTML = '<p style="color:#c0392b;">Error al cargar el documento. Puedes descargarlo usando el botón superior.</p>';
+                    visorDocx.innerHTML = '<p style="color:#c0392b;">Error al cargar el documento. Intenta de nuevo más tarde.</p>';
                 }
-            } else { // .doc
+            } else {
+                // .doc antiguo
                 visorDocx.style.display = 'block';
                 visorDocx.innerHTML = `
                     <div style="text-align:center;padding:3rem;">
                         <p style="font-size:2rem;">📙</p>
                         <p>Los archivos <strong>.doc</strong> antiguos no pueden previsualizarse aquí.</p>
-                        <p>Usa el botón <strong>"Descargar"</strong> para abrirlo en tu dispositivo.</p>
-                        <a href="${urlArchivo}" style="display:inline-block;margin-top:1rem;padding:0.6rem 1.5rem;background:#8b5e3c;color:#fff;border-radius:6px;text-decoration:none;">⬇ Descargar archivo</a>
+                        <p>Este formato no es compatible con la lectura en línea.</p>
                     </div>
                 `;
             }
         }
 
-        // ============ SUBIR ARCHIVO A SUPABASE STORAGE ============
+        // ========== RENOVAR URL CADA 50 MINUTOS ==========
+        setInterval(async () => {
+            if (archivoActualLectura && visorPDF.style.display === 'block') {
+                const nuevaUrl = await obtenerUrlFirmada(archivoActualLectura.storage_path);
+                if (nuevaUrl) {
+                    urlFirmadaActual = nuevaUrl;
+                    visorPDF.src = nuevaUrl;
+                }
+            }
+        }, 50 * 60 * 1000); // 50 minutos
+
+        // ========== SUBIR ARCHIVO ==========
         async function subirArchivo() {
             if (!archivoParaSubir || !emailUsuario) return;
             btnSubirArchivo.disabled = true;
@@ -440,8 +522,7 @@
             const timestamp = Date.now();
             const storagePath = `${timestamp}-${archivoParaSubir.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
 
-            // Subir a Storage
-            const { data: uploadData, error: uploadError } = await supabase.storage
+            const { error: uploadError } = await supabase.storage
                 .from('documentos')
                 .upload(storagePath, archivoParaSubir, { upsert: false });
 
@@ -452,7 +533,6 @@
                 return;
             }
 
-            // Insertar metadatos en la tabla archivos
             const { error: dbError } = await supabase.from('archivos').insert({
                 nombre: archivoParaSubir.name,
                 tipo: ext,
@@ -487,7 +567,15 @@
             errorSubida.style.display = 'none';
         }
 
-        // Eventos del modal (mismos que antes)
+        function mostrarErrorSubida(msg) {
+            errorSubida.textContent = msg;
+            errorSubida.style.display = 'block';
+            archivoParaSubir = null;
+            archivoSeleccionado.classList.remove('visible');
+            btnSubirArchivo.disabled = true;
+        }
+
+        // Eventos del modal
         btnAbrirModal.addEventListener('click', () => overlayModal.classList.remove('oculta'));
         btnCerrarModal.addEventListener('click', () => { overlayModal.classList.add('oculta'); resetearModal(); });
         overlayModal.addEventListener('click', (e) => { if (e.target === overlayModal) { overlayModal.classList.add('oculta'); resetearModal(); } });
@@ -519,14 +607,6 @@
             btnSubirArchivo.disabled = false;
         }
 
-        function mostrarErrorSubida(msg) {
-            errorSubida.textContent = msg;
-            errorSubida.style.display = 'block';
-            archivoParaSubir = null;
-            archivoSeleccionado.classList.remove('visible');
-            btnSubirArchivo.disabled = true;
-        }
-
         btnSubirArchivo.addEventListener('click', subirArchivo);
 
         // Tecla ESC para cerrar modal
@@ -537,14 +617,23 @@
             }
         });
 
-        // Actualizar lista cada 30 segundos
+        // Bloquear clic derecho en el visor
+        document.addEventListener('contextmenu', (e) => {
+            if (e.target.closest('#visorPDF') || e.target.closest('#visorDocx')) {
+                e.preventDefault();
+            }
+        });
+
+        // Actualizar lista periódicamente
         setInterval(() => {
             if (emailUsuario) cargarArchivos();
         }, 30000);
 
-        // Mammoth.js (debe estar cargado antes, lo ponemos en un script aparte)
+        console.log('📖 "notas al margen" — sala de lectura colaborativa');
+        console.log('💬 Unirse al canal de Discord:', DISCORD_INVITE_URL);
     </script>
-    <!-- Dependencia para leer DOCX en el navegador -->
+
+    <!-- Dependencia para leer DOCX -->
     <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
 </body>
 </html>
